@@ -1,0 +1,30 @@
+services:
+  chats-postgres:
+    image: postgres:15-alpine
+    container_name: chats-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: chats
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  chats-api-service:
+    build: .
+    container_name: chats-api-service
+    image: chat-api-service:0.1.0
+    environment:
+      DB_HOST: chats-postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: chats
+      DB_PORT: 5432
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - chats-postgres
+
+volumes:
+  postgres_data:
