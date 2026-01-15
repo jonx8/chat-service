@@ -8,6 +8,7 @@ RUN go mod download
 
 COPY cmd/ ./cmd/
 COPY internal/ ./internal/
+COPY migrations/ ./migrations
 
 RUN GOOS=linux CGO_ENABLED=0 go build -ldflags="-w -s" -o main ./cmd/server
 

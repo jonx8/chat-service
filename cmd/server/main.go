@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -16,7 +17,12 @@ import (
 func main() {
 	cfg := config.Load()
 
-	database, err := database.New(cfg)
+	slog.Info(fmt.Sprintf("Starting %s:%s...", cfg.AppName, cfg.AppVersion))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	db, err := database.New(ctx, cfg)
 	if err != nil {
 		slog.Error("Failed to initialize database", "error", err)
 		os.Exit(1)
@@ -24,14 +30,13 @@ func main() {
 
 	defer func() {
 		slog.Info("Closing database connection...")
-		if err := database.Close(); err != nil {
+		if err := db.Close(); err != nil {
 			slog.Error("Failed to close database", "error", err)
 		} else {
 			slog.Info("Database connection closed")
 		}
 	}()
 
-	// Создаем HTTP сервер
 	mux := http.NewServeMux()
 
 	server := &http.Server{
@@ -44,7 +49,7 @@ func main() {
 
 	serverErrors := make(chan error, 1)
 	go func() {
-		slog.Info("Starting HTTP server", "addr", server.Addr)
+		slog.Info("Starting HTTP server...", "addr", server.Addr)
 		serverErrors <- server.ListenAndServe()
 	}()
 
@@ -58,7 +63,7 @@ func main() {
 	case sig := <-quit:
 		slog.Info("Received shutdown signal", "signal", sig)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		slog.Info("Shutting down server gracefully...")

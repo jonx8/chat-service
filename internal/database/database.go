@@ -1,12 +1,15 @@
 package database
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/url"
 	"time"
 
 	"github.com/jonx8/chat-service/internal/config"
+	"github.com/jonx8/chat-service/migrations"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -16,10 +19,10 @@ type Database struct {
 	cfg *config.Config
 }
 
-func New(cfg *config.Config) (*Database, error) {
+func New(ctx context.Context, cfg *config.Config) (*Database, error) {
 	dsn := getDSN(cfg)
 
-	slog.Info("Opening connection to PostgreSQL")
+	slog.Info("Opening connection to PostgreSQL...")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		PrepareStmt:          true,
 		DisableAutomaticPing: false,
@@ -48,6 +51,16 @@ func New(cfg *config.Config) (*Database, error) {
 		return nil, fmt.Errorf("setup pool: %w", err)
 	}
 
+	sqlDB, err := database.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := migrations.RunMigrations(ctx, sqlDB); err != nil {
+		slog.Error("Failed to run migrations", "error", err)
+		return nil, fmt.Errorf("migrations failed: %w", err)
+	}
+
 	slog.Info("PostgreSQL connection pool configured",
 		"host", cfg.DBHost,
 		"port", cfg.DBPort,
@@ -59,19 +72,23 @@ func New(cfg *config.Config) (*Database, error) {
 	return database, err
 }
 
-func (d *Database) Close() error {
-	slog.Info("Closing database connection",
-		"host", d.cfg.DBHost,
-		"database", d.cfg.DBName,
-	)
+func (d *Database) DB() (*sql.DB, error) {
 	if d.db != nil {
 		sqlDB, err := d.db.DB()
 		if err != nil {
-			return fmt.Errorf("get underlying db: %w", err)
+			return nil, fmt.Errorf("get underlying db: %w", err)
 		}
-		return sqlDB.Close()
+		return sqlDB, nil
 	}
-	return nil
+	return nil, fmt.Errorf("gorm DB is nil")
+}
+
+func (d *Database) Close() error {
+	sqlDB, err := d.DB()
+	if err != nil {
+		return fmt.Errorf("can't close connection: %w", err)
+	}
+	return sqlDB.Close()
 }
 
 func (d *Database) setupPool() error {

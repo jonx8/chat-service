@@ -9,6 +9,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    networks:
+      - chats-net
 
   chats-api-service:
     build: .
@@ -23,8 +31,14 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080"
+    networks:
+      - chats-net
     depends_on:
-      - chats-postgres
+      chats-postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+
+networks:
+  chats-net:
