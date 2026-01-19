@@ -12,6 +12,9 @@ import (
 
 	"github.com/jonx8/chat-service/internal/config"
 	"github.com/jonx8/chat-service/internal/database"
+	"github.com/jonx8/chat-service/internal/handlers"
+	"github.com/jonx8/chat-service/internal/repositories"
+	"github.com/jonx8/chat-service/internal/services"
 )
 
 func main() {
@@ -37,7 +40,23 @@ func main() {
 		}
 	}()
 
+	gormDB := db.Gorm()
+	chatRepo := repositories.NewChatRepository(gormDB)
+	messageRepo := repositories.NewMessageRepository(gormDB)
+
+	chatService := services.NewChatService(chatRepo)
+	messageService := services.NewMessageService(messageRepo)
+
+	chatHandler := handlers.NewChatHandler(chatService)
+	messageHandler := handlers.NewMessageHandler(messageService)
+
 	mux := http.NewServeMux()
+
+	mux.HandleFunc("POST /chats", chatHandler.CreateChat)
+	mux.HandleFunc("GET /chats/{id}", chatHandler.GetChat)
+	mux.HandleFunc("DELETE /chats/{id}", chatHandler.DeleteChat)
+
+	mux.HandleFunc("POST /chats/{id}/messages", messageHandler.CreateMessage)
 
 	server := &http.Server{
 		Addr:         ":8080",

@@ -21,7 +21,7 @@ services:
   chats-api-service:
     build: .
     container_name: chats-api-service
-    image: chat-api-service:0.1.0
+    image: chat-api-service:1.0.0
     environment:
       DB_HOST: chats-postgres
       DB_USER: postgres

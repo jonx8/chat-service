@@ -83,6 +83,10 @@ func (d *Database) DB() (*sql.DB, error) {
 	return nil, fmt.Errorf("gorm DB is nil")
 }
 
+func (d *Database) Gorm() *gorm.DB {
+	return d.db
+}
+
 func (d *Database) Close() error {
 	sqlDB, err := d.DB()
 	if err != nil {

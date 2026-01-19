@@ -30,7 +30,7 @@ type Config struct {
 func Load() *Config {
 	return &Config{
 		AppName:    getEnv("APP_NAME", "chat-service"),
-		AppVersion: getEnv("APP_VERSION", "0.1.0"),
+		AppVersion: getEnv("APP_VERSION", "1.0.0"),
 
 		// HTTP
 		HTTPPort: getEnv("PORT", "8080"),
