@@ -51,8 +51,9 @@ func (h *ChatHandler) GetChat(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	json.NewEncoder(w).Encode(chat)
-
+	if err := json.NewEncoder(w).Encode(chat); err != nil {
+		slog.Error("Failed to serialize chat", "error", err, "chat", chat)
+	}
 }
 
 func (h *ChatHandler) CreateChat(w http.ResponseWriter, r *http.Request) {
@@ -84,8 +85,9 @@ func (h *ChatHandler) CreateChat(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(chat)
-
+	if err := json.NewEncoder(w).Encode(chat); err != nil {
+		slog.Error("Failed to serialize chat", "error", err, "chat", chat)
+	}
 }
 
 func (h *ChatHandler) DeleteChat(w http.ResponseWriter, r *http.Request) {

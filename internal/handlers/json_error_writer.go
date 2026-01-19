@@ -2,14 +2,19 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 )
 
 func writeJSONError(w http.ResponseWriter, status int, code, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"error":   code,
 		"message": message,
 	})
+
+	if err != nil {
+		slog.Error("Failed serialize json error", "error", err, "message", message)
+	}
 }

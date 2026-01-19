@@ -51,6 +51,8 @@ func (h *MessageHandler) CreateMessage(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(message)
+	if err := json.NewEncoder(w).Encode(message); err != nil {
+		slog.Error("Failed to serialize message", "error", err, "message", message)
+	}
 
 }
